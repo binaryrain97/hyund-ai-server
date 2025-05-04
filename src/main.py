@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from preprocess import preprocess_document
 from flask_cors import CORS
+from cluster_manager import index_document_by_category
 
 app = Flask(__name__)
 CORS(app)
@@ -14,8 +15,8 @@ def upload_file():
         return jsonify({'error': '경로가 없습니다.'}), 400
 
     try:
-        text = preprocess_document(path)
-        return jsonify({'processed_text': text})
+        result = index_document_by_category(path)
+        return jsonify(result), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
