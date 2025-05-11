@@ -6,7 +6,13 @@ import numpy as np
 from sentence_transformers import SentenceTransformer
 from config import BASE_PATH
 
+model = None
+
 def search_files(query):
+    global model
+    if model is None:
+        model = SentenceTransformer("all-MiniLM-L6-v2")
+        
     metadata_path = os.path.join(BASE_PATH, 'metadata.pkl')
     index_path = os.path.join(BASE_PATH, 'index.faiss')
 
@@ -32,7 +38,7 @@ def search_files(query):
     D, I = index.search(query_vec, k=top_k)
 
     # 거리를 유사도 점수로 변환 (1 - L2 거리)
-    similarities = 1 - D[0]
+    similarities = -D[0]
 
     # 결과 정렬 (유사도 높은 순)
     sorted_indices = np.argsort(-similarities)

@@ -1,3 +1,5 @@
+import os
+import tempfile
 from flask import Flask, request, jsonify
 from classify import classify_document
 from config import init_categories
@@ -38,50 +40,32 @@ def search_file_route():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
-# @app.route('/upload-file', methods=['POST'])
-# def upload_file():
-#     if 'file' not in request.files:
-#         return jsonify({'error': '파일이 없습니다'}), 400
-        
-#     file = request.files['file']
-    
-#     if file.filename == '':
-#         return jsonify({'error': '선택된 파일이 없습니다'}), 400
-    
-#     if not allowed_file(file.filename):
-#         return jsonify({'error': '허용되지 않은 파일 형식'}), 400
+@app.route('/upload_file', methods=['POST'])
+def upload_real_file():
+    if 'file' not in request.files:
+        return jsonify({'error': '파일이 없습니다.'}), 400
 
-    # try:
-    #     # 임시 저장
-    #     filename = secure_filename(file.filename)
-    #     temp_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    #     file.save(temp_path)
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': '파일명이 없습니다.'}), 400
 
-    #     # 문서 처리
-    #     processed_data = preprocess_document(temp_path)
-    #     category_result = index_document_by_category(processed_data)
+    # 임시 디렉토리에 파일 저장
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        file.save(tmp.name)
+        tmp_path = tmp.name
 
-    #     # 최종 이동
-    #     final_path = os.path.join(app.config['FINAL_FOLDER'], filename)
-    #     os.rename(temp_path, final_path)
-
-    #     return jsonify({
-    #         'filename': filename,
-    #         'category': category_result['category'],
-    #         'saved_path': final_path,
-    #         'status': 'success'
-    #     }), 200
-
-    # except Exception as e:
-    #     # 오류 발생 시 임시 파일 정리
-    #     if os.path.exists(temp_path):
-    #         os.remove(temp_path)
-    #     return jsonify({'error': str(e)}), 500
-
-    # finally:
-    #     # 임시 파일 존재 시 항상 삭제
-    #     if 'temp_path' in locals() and os.path.exists(temp_path):
-    #         os.remove(temp_path)
+    try:
+        result = classify_document(tmp_path)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        # 임시 파일 삭제 (분류 함수에서 move_file로 이동했다면 삭제 안 해도 됨)
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
 
 if __name__ == '__main__':
     init_categories()

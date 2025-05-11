@@ -1,6 +1,8 @@
 import os
 
 BASE_PATH = r'result'
+INDEX_PATH = r'result/index.faiss'
+METADATA_PATH = r'result/metadata.pkl'
 
 CATEGORY_KOR_TO_ENG = {
     "계약서": "contracts",
