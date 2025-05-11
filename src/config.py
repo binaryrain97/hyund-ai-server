@@ -1,3 +1,5 @@
+import os
+
 BASE_PATH = r'result'
 
 CATEGORY_KOR_TO_ENG = {
@@ -25,3 +27,9 @@ CATEGORY_LABELS = {
     "정책/규정": "회사 정책, 규정, 지침 관련 문서입니다.",
     "일반 문서": "기타 또는 분류되지 않는 문서입니다."
 }
+
+def init_categories():
+    for label in CATEGORY_LABELS.keys():
+        label_eng = CATEGORY_KOR_TO_ENG[label]
+        dir_path = os.path.join(BASE_PATH, label_eng)
+        os.makedirs(dir_path, exist_ok=True)
