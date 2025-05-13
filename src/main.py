@@ -49,24 +49,30 @@ def upload_real_file():
     if file.filename == '':
         return jsonify({'error': '파일명이 없습니다.'}), 400
 
-    # 임시 디렉토리에 파일 저장
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
-        file.save(tmp.name)
-        tmp_path = tmp.name
+    # 원본 파일명 추출
+    original_name = file.filename
+    temp_dir = tempfile.TemporaryDirectory()  # 임시 디렉토리 생성
 
     try:
-        result = classify_document(tmp_path)
+        # 1. 원본 파일명으로 임시 저장
+        temp_path = os.path.join(temp_dir.name, original_name)
+        file.save(temp_path)
+
+        # 2. 파일 분류 처리
+        result = classify_document(temp_path)
+        
+        # 3. 처리 완료 후 임시 디렉토리 정리 (파일은 이미 이동됨)
         return jsonify(result), 200
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     finally:
-        # 임시 파일 삭제 (분류 함수에서 move_file로 이동했다면 삭제 안 해도 됨)
-        if os.path.exists(tmp_path):
-            try:
-                os.remove(tmp_path)
-            except Exception:
-                pass
+        # 4. 임시 디렉토리 삭제 (내부 파일은 이미 이동 완료)
+        try:
+            temp_dir.cleanup()
+        except Exception:
+            pass
 
 if __name__ == '__main__':
     init_categories()
-    app.run()
+    app.run(debug=True)
