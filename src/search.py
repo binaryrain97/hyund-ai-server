@@ -16,11 +16,9 @@ def search_files(query):
     metadata_path = os.path.join(BASE_PATH, 'metadata.pkl')
     index_path = os.path.join(BASE_PATH, 'index.faiss')
 
-    # 1. 파일 존재 여부 확인
     if not (os.path.exists(metadata_path) and os.path.exists(index_path)):
         return []
 
-    # 2. 메타데이터 로드 (예외 처리 추가)
     try:
         with open(metadata_path, 'rb') as f:
             metadata = pickle.load(f)
@@ -30,23 +28,21 @@ def search_files(query):
         elif not isinstance(metadata, pd.DataFrame):
             return []
             
-        if metadata.empty:  # 빈 데이터 체크
+        if metadata.empty:
             return []
             
     except Exception as e:
         print(f"Metadata loading error: {e}")
         return []
 
-    # 3. 인덱스 로드 (예외 처리 추가)
     try:
         index = faiss.read_index(index_path)
-        if index.ntotal == 0:  # 빈 인덱스 체크
+        if index.ntotal == 0:
             return []
     except Exception as e:
         print(f"Index loading error: {e}")
         return []
 
-    # 4. 검색 실행
     try:
         query_vec = model.encode([query]).astype("float32").reshape(1, -1)
         num_docs = index.ntotal
@@ -59,16 +55,21 @@ def search_files(query):
         similarities = -D[0]
 
         results = []
+        seen_files = set()  # 추가된 부분: 중복 체크용 집합
         for idx, sim in zip(I[0], similarities):
-            # 유효한 인덱스 범위 확인 (0 <= idx < 문서 수)
             if 0 <= idx < len(metadata):
                 doc_info = metadata.iloc[idx]
-                results.append({
-                    'name': doc_info.get('name', ''),
-                    'dir': doc_info.get('dir', ''),
-                    'category_kor': doc_info.get('category_kor', ''),
-                    'similarity': float(sim)
-                })
+                file_name = doc_info.get('name', '')
+                
+                # 추가된 부분: 중복 파일 필터링
+                if file_name not in seen_files:
+                    seen_files.add(file_name)
+                    results.append({
+                        'name': file_name,
+                        'dir': doc_info.get('dir', ''),
+                        'category_kor': doc_info.get('category_kor', ''),
+                        'similarity': float(sim)
+                    })
                 
         return results
         
