@@ -73,6 +73,20 @@ def upload_real_file():
         except Exception:
             pass
 
+@app.route('/preprocess', methods=['POST'])
+def preprocess_file():
+    data = request.get_json()
+    path = data.get('path')
+
+    if not path:
+        return jsonify({'error': '경로가 없습니다.'}), 400
+
+    try:
+        result = preprocess_document(path)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     init_categories()
     app.run(debug=True)

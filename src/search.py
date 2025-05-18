@@ -52,7 +52,7 @@ def search_files(query):
             return []
             
         D, I = index.search(query_vec, k=top_k)
-        similarities = -D[0]
+        similarities = (1 / (1 + np.abs(D[0]))) * 100  # 수정된 부분
 
         results = []
         seen_files = set()  # 추가된 부분: 중복 체크용 집합
